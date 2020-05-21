@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-// const Client = require('Client');
 
 const RoomSchema = new mongoose.Schema({
     number: {

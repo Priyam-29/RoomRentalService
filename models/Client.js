@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-// const Room = require('Room');
 
 var today = new Date();
 var current = today.getFullYear()+'-'+(today.getMonth());
