@@ -136,6 +136,7 @@ app.get('/showRooms', (req, res) => {
 
 app.post('/bookRoom/:id', (req, res) => {
     // id : _id of the Room object
+    // only those _id's would be entered which are listed after executing showRooms
     // REQ BODY: Client Object
     console.log(req.body)
     var newBooking = new Client(req.body);
@@ -165,6 +166,16 @@ app.get('/showBookings/:id', (req, res) => {
             r["Room Details"] = room;
             r["Booking Details"] = [];
             let count=0;
+            if(room.bookingStatus.length === 0)
+            {
+                console.log(room)
+                console.log(room.bookingStatus)
+                res.status(200).json({
+                    Room : r["Room Details"],
+                    Bookings : r["Booking Details"]
+                });
+                return;
+            }
             room.bookingStatus.forEach(booking => {
 
                 Client.findOne({"_id": booking})
