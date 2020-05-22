@@ -20,15 +20,23 @@ mongoose.connect('mongodb://localhost:27017/Beamfox', {useNewUrlParser: true, us
 app.post('/addRoom', (req, res) => {
     // REQ BODY: Array of Room objects
     var rooms = req.body.rooms
+    let n = 0;
+    let addedRooms = [];
     rooms.forEach(room => {
         var newRoom = new Room(room);
         newRoom.save().then(r => {
-            console.log('Saved', r);
-            res.status(200).json({
-                message : 'Successfully added'
-            });
-        });
-    });
+            n++;
+            console.log('Saved', r)
+            addedRooms.push(r);
+            if(n === rooms.length)
+            {
+                res.status(200).json({
+                    message : 'Successfully added',
+                    addedRooms : addedRooms
+                });
+            }
+        }).catch(e => res.send(e));
+    });     
 })
 
 
@@ -57,7 +65,7 @@ app.post('/updateRoom', (req, res) => {
             });
         })
         .catch(e => res.send(e));
-    }).catch(e => {res.send(e)});
+    }).catch(e => res.send(e));
 })
 
 app.delete('/deleteRoom', (req, res) => {
@@ -83,28 +91,45 @@ app.get('/showRooms', (req, res) => {
     let addr = req.query.address
     let cin = new Date(req.query.checkIn)    //YYYY-MM string
     let cout = new Date(req.query.checkOut)
+    let type = req.query.type
+    let bedCapacity = req.query.bedCapacity
+    let maxRent = req.query.maxRent
     var availableRooms = [];
+    if(addr === undefined || cin === undefined || cout === undefined)
+    {
+        res.send("Insufficient parameters");
+        return;
+    }
     Room.find( {address: addr} )
     .then(rooms => {
+        let i = 0;
         rooms.forEach(room => {
-            availableRooms.push(room);
-            room.bookingStatus.forEach(booking => {
-                Client.findOne({"_id": booking})
-                .then(b => {
-                    console.log(b)
-                    if(cout < b.checkIn || cin > b.checkOut)
-                    {
-                    }
-                    else
-                    {
-                        availableRooms.pop();
-                        res.status(200).json({
-                            message : 'Showing Rooms',
-                            rooms : availableRooms
-                        });
-                    }
+            i++;
+            if((type === undefined || room.type === type) && (bedCapacity === undefined || room.bedCapacity == bedCapacity) && (maxRent === undefined || room.rent <= maxRent) )
+            {
+                availableRooms.push(room);
+                console.log(room)
+                room.bookingStatus.forEach(booking => {
+                    Client.findOne({"_id": booking})
+                    .then(b => {
+                        console.log(b)
+                        if(cout < b.checkIn || cin > b.checkOut)
+                        {
+                        }
+                        else
+                        {
+                            availableRooms.pop();
+                        }
+                    }).catch(err => console.log(err));
                 });
-            })
+            }
+            if(i === rooms.length )
+            {
+                res.status(200).json({
+                    message : 'Showing Rooms',
+                    rooms : availableRooms
+                });
+            }
         });
     }).catch(err => console.log(err));
 });
